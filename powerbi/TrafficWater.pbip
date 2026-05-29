@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "settings": {},
+  "artifacts": [
+    {
+      "report": {
+        "path": "TrafficWater.Report"
+      }
+    },
+    {
+      "dataset": {
+        "path": "TrafficWater.SemanticModel"
+      }
+    }
+  ]
+}

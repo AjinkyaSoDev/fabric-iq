@@ -1,0 +1,55 @@
+{
+  "$schema": "http://datafactory.azure.com/schemas/fabric-pipeline/v1",
+  "name": "GGM_Synthetic_TrafficWater",
+  "description": "Fabric Data Pipeline: generate GGM-aligned synthetic data, then curate bronze->silver->gold and run data-quality checks.",
+  "properties": {
+    "activities": [
+      {
+        "name": "Bronze_Ingest",
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "{{notebook_id_01}}",
+          "workspaceId": "{{workspace_id}}",
+          "parameters": { "days": { "value": "14", "type": "int" } }
+        }
+      },
+      {
+        "name": "Silver_Curate",
+        "type": "TridentNotebook",
+        "dependsOn": [ { "activity": "Bronze_Ingest", "dependencyConditions": ["Succeeded"] } ],
+        "typeProperties": {
+          "notebookId": "{{notebook_id_02}}",
+          "workspaceId": "{{workspace_id}}"
+        }
+      },
+      {
+        "name": "Gold_Marts",
+        "type": "TridentNotebook",
+        "dependsOn": [ { "activity": "Silver_Curate", "dependencyConditions": ["Succeeded"] } ],
+        "typeProperties": {
+          "notebookId": "{{notebook_id_03}}",
+          "workspaceId": "{{workspace_id}}"
+        }
+      },
+      {
+        "name": "Quality_Checks",
+        "type": "TridentNotebook",
+        "dependsOn": [ { "activity": "Gold_Marts", "dependencyConditions": ["Succeeded"] } ],
+        "typeProperties": {
+          "notebookId": "{{notebook_id_04}}",
+          "workspaceId": "{{workspace_id}}"
+        }
+      },
+      {
+        "name": "Refresh_Semantic_Model",
+        "type": "RefreshDataset",
+        "dependsOn": [ { "activity": "Quality_Checks", "dependencyConditions": ["Succeeded"] } ],
+        "typeProperties": {
+          "datasetId": "{{semantic_model_id}}",
+          "workspaceId": "{{workspace_id}}"
+        }
+      }
+    ],
+    "annotations": ["GGM", "synthetic", "traffic", "water", "POC"]
+  }
+}

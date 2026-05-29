@@ -1,0 +1,91 @@
+{
+  "name": "GGM_TrafficWater",
+  "compatibilityLevel": 1604,
+  "model": {
+    "culture": "nl-NL",
+    "dataAccessOptions": {
+      "legacyRedirects": true,
+      "returnErrorValuesAsNull": true
+    },
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "sourceQueryCulture": "nl-NL",
+    "tables": [
+      {
+        "name": "dim_locatie",
+        "columns": [
+          {"name": "locatie_id",   "dataType": "string"},
+          {"name": "naam",         "dataType": "string"},
+          {"name": "locatie_type", "dataType": "string"},
+          {"name": "wijk_code",    "dataType": "string"},
+          {"name": "geom_x_rd",    "dataType": "double"},
+          {"name": "geom_y_rd",    "dataType": "double"}
+        ],
+        "partitions": [{"name": "dim_locatie", "mode": "directLake", "source": {"type": "entity", "entityName": "dim_locatie"}}]
+      },
+      {
+        "name": "dim_tijd",
+        "columns": [
+          {"name": "tijdstip",   "dataType": "dateTime"},
+          {"name": "datum",      "dataType": "dateTime"},
+          {"name": "uur",        "dataType": "int64"},
+          {"name": "weekdag",    "dataType": "string"},
+          {"name": "is_weekend", "dataType": "boolean"}
+        ],
+        "partitions": [{"name": "dim_tijd", "mode": "directLake", "source": {"type": "entity", "entityName": "dim_tijd"}}]
+      },
+      {
+        "name": "fact_verkeer",
+        "columns": [
+          {"name": "locatie_id",          "dataType": "string"},
+          {"name": "meet_tijdstip",       "dataType": "dateTime"},
+          {"name": "voertuigen_per_uur",  "dataType": "int64"},
+          {"name": "gem_snelheid_kmh",    "dataType": "double"},
+          {"name": "pct_zwaar_verkeer",   "dataType": "double"},
+          {"name": "bron",                "dataType": "string"}
+        ],
+        "measures": [
+          {"name": "Totaal voertuigen",  "expression": "SUM(fact_verkeer[voertuigen_per_uur])"},
+          {"name": "Gem. snelheid",      "expression": "AVERAGE(fact_verkeer[gem_snelheid_kmh])"}
+        ],
+        "partitions": [{"name": "fact_verkeer", "mode": "directLake", "source": {"type": "entity", "entityName": "fact_verkeer"}}]
+      },
+      {
+        "name": "fact_waterpeil",
+        "columns": [
+          {"name": "locatie_id",    "dataType": "string"},
+          {"name": "meet_tijdstip", "dataType": "dateTime"},
+          {"name": "peil_nap_m",    "dataType": "double"},
+          {"name": "debiet_m3_s",   "dataType": "double"}
+        ],
+        "measures": [
+          {"name": "Gem. peil (m NAP)", "expression": "AVERAGE(fact_waterpeil[peil_nap_m])"},
+          {"name": "Max debiet",        "expression": "MAX(fact_waterpeil[debiet_m3_s])"}
+        ],
+        "partitions": [{"name": "fact_waterpeil", "mode": "directLake", "source": {"type": "entity", "entityName": "fact_waterpeil"}}]
+      },
+      {
+        "name": "fact_waterkwaliteit",
+        "columns": [
+          {"name": "locatie_id",    "dataType": "string"},
+          {"name": "meet_tijdstip", "dataType": "dateTime"},
+          {"name": "parameter",     "dataType": "string"},
+          {"name": "waarde",        "dataType": "double"},
+          {"name": "eenheid",       "dataType": "string"},
+          {"name": "norm_status",   "dataType": "string"}
+        ],
+        "measures": [
+          {"name": "% Overschrijdingen", "expression": "DIVIDE(CALCULATE(COUNTROWS(fact_waterkwaliteit), fact_waterkwaliteit[norm_status] = \"overschrijding\"), COUNTROWS(fact_waterkwaliteit))"}
+        ],
+        "partitions": [{"name": "fact_waterkwaliteit", "mode": "directLake", "source": {"type": "entity", "entityName": "fact_waterkwaliteit"}}]
+      }
+    ],
+    "relationships": [
+      {"name": "verkeer_locatie",         "fromTable": "fact_verkeer",         "fromColumn": "locatie_id",    "toTable": "dim_locatie", "toColumn": "locatie_id"},
+      {"name": "verkeer_tijd",            "fromTable": "fact_verkeer",         "fromColumn": "meet_tijdstip", "toTable": "dim_tijd",    "toColumn": "tijdstip"},
+      {"name": "waterpeil_locatie",       "fromTable": "fact_waterpeil",       "fromColumn": "locatie_id",    "toTable": "dim_locatie", "toColumn": "locatie_id"},
+      {"name": "waterpeil_tijd",          "fromTable": "fact_waterpeil",       "fromColumn": "meet_tijdstip", "toTable": "dim_tijd",    "toColumn": "tijdstip"},
+      {"name": "waterkwaliteit_locatie",  "fromTable": "fact_waterkwaliteit",  "fromColumn": "locatie_id",    "toTable": "dim_locatie", "toColumn": "locatie_id"},
+      {"name": "waterkwaliteit_tijd",     "fromTable": "fact_waterkwaliteit",  "fromColumn": "meet_tijdstip", "toTable": "dim_tijd",    "toColumn": "tijdstip"}
+    ]
+  }
+}

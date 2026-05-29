@@ -1,0 +1,9 @@
+# local lakehouse output is generated, not checked in
+lakehouse/bronze/*/
+lakehouse/silver/*/
+lakehouse/gold/*/
+!lakehouse/**/.gitkeep
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/

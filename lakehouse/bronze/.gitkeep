@@ -1,0 +1,1 @@
+# keep folders present in git even when output parquet is gitignored

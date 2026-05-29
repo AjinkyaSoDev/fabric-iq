@@ -1,0 +1,144 @@
+{
+  "$comment": "Curated subset of the Gemeentelijk Gegevensmodel (GGM v2.4). Source: https://github.com/Gemeente-Delft/Gemeentelijk-Gegevensmodel . Scope: IV3 task fields 2.x (Verkeer & Vervoer) and 7.x (Volksgezondheid & Milieu - water). Names are kept in Dutch to match the GGM logical model.",
+  "version": "0.1.0",
+  "ggm_version": "2.4.0",
+  "crs": "EPSG:28992 (RD New)",
+  "domains": {
+    "verkeer_vervoer": {
+      "iv3_taakvelden": ["2.1 Verkeer en vervoer", "2.2 Parkeren", "2.5 Openbaar vervoer"],
+      "entities": ["Wegvak", "Verkeersbord", "Verkeerslicht", "Parkeerplaats", "OVHalte", "Verkeersmeting"]
+    },
+    "water_milieu": {
+      "iv3_taakvelden": ["7.2 Riolering", "7.4 Milieubeheer"],
+      "entities": ["Watergang", "Rioolstreng", "Gemaal", "Lozingspunt", "Waterpeilmeting", "Waterkwaliteitsmeting"]
+    }
+  },
+  "entities": {
+    "Wegvak": {
+      "description": "Een aaneengesloten deel van een weg tussen twee kruispunten.",
+      "primary_key": "wegvak_id",
+      "attributes": {
+        "wegvak_id":    { "type": "string",  "format": "uuid" },
+        "straatnaam":   { "type": "string" },
+        "wegtype":      { "type": "enum",    "values": ["autoweg","gebiedsontsluitingsweg","erftoegangsweg","fietspad","voetpad"] },
+        "lengte_m":     { "type": "decimal", "min": 5, "max": 2000 },
+        "max_snelheid": { "type": "int",     "values": [15,30,50,70,80,100,120,130] },
+        "wijk_code":    { "type": "string",  "ref": "Wijk" },
+        "geom_x_rd":    { "type": "decimal" },
+        "geom_y_rd":    { "type": "decimal" },
+        "geldig_van":   { "type": "date" }
+      }
+    },
+    "Verkeersbord": {
+      "primary_key": "bord_id",
+      "attributes": {
+        "bord_id":      { "type": "string", "format": "uuid" },
+        "wegvak_id":    { "type": "string", "ref": "Wegvak" },
+        "rvv_code":     { "type": "string", "examples": ["A01","B06","C01","E06","G11","J16"] },
+        "omschrijving": { "type": "string" },
+        "installatie_datum": { "type": "date" }
+      }
+    },
+    "Verkeerslicht": {
+      "primary_key": "vri_id",
+      "attributes": {
+        "vri_id":      { "type": "string", "format": "uuid" },
+        "wegvak_id":   { "type": "string", "ref": "Wegvak" },
+        "type":        { "type": "enum", "values": ["voertuig","voetganger","fiets","ov"] },
+        "is_intelligent": { "type": "bool" }
+      }
+    },
+    "Parkeerplaats": {
+      "primary_key": "parkeer_id",
+      "attributes": {
+        "parkeer_id":    { "type": "string", "format": "uuid" },
+        "wegvak_id":     { "type": "string", "ref": "Wegvak" },
+        "capaciteit":    { "type": "int", "min": 1, "max": 500 },
+        "soort":         { "type": "enum", "values": ["straatparkeren","parkeergarage","P+R","vergunninghouders"] },
+        "is_elektrisch": { "type": "bool" },
+        "tarief_per_uur":{ "type": "decimal", "min": 0, "max": 6.5 }
+      }
+    },
+    "OVHalte": {
+      "primary_key": "halte_id",
+      "attributes": {
+        "halte_id":   { "type": "string", "format": "uuid" },
+        "naam":       { "type": "string" },
+        "modaliteit": { "type": "enum", "values": ["bus","tram","trein"] },
+        "wegvak_id":  { "type": "string", "ref": "Wegvak" }
+      }
+    },
+    "Verkeersmeting": {
+      "description": "Time-series tellingen per wegvak per uur.",
+      "primary_key": ["wegvak_id","meet_tijdstip"],
+      "attributes": {
+        "wegvak_id":          { "type": "string", "ref": "Wegvak" },
+        "meet_tijdstip":      { "type": "timestamp" },
+        "voertuigen_per_uur": { "type": "int", "min": 0, "max": 6000 },
+        "gem_snelheid_kmh":   { "type": "decimal", "min": 0, "max": 130 },
+        "pct_zwaar_verkeer":  { "type": "decimal", "min": 0, "max": 1.0 },
+        "bron":               { "type": "enum", "values": ["lus","camera","floating-car-data"] }
+      }
+    },
+    "Watergang": {
+      "primary_key": "watergang_id",
+      "attributes": {
+        "watergang_id": { "type": "string", "format": "uuid" },
+        "naam":         { "type": "string" },
+        "categorie":    { "type": "enum", "values": ["primair","secundair","tertiair"] },
+        "lengte_m":     { "type": "decimal", "min": 10, "max": 5000 },
+        "breedte_m":    { "type": "decimal", "min": 0.5, "max": 60 },
+        "wijk_code":    { "type": "string" }
+      }
+    },
+    "Rioolstreng": {
+      "primary_key": "streng_id",
+      "attributes": {
+        "streng_id": { "type": "string", "format": "uuid" },
+        "type":      { "type": "enum", "values": ["gemengd","hwa","dwa"] },
+        "diameter_mm": { "type": "int", "values": [200,250,300,400,500,600,800,1000,1200] },
+        "materiaal": { "type": "enum", "values": ["beton","pvc","gres","gietijzer"] },
+        "aanleg_jaar": { "type": "int", "min": 1900, "max": 2025 }
+      }
+    },
+    "Gemaal": {
+      "primary_key": "gemaal_id",
+      "attributes": {
+        "gemaal_id":   { "type": "string", "format": "uuid" },
+        "naam":        { "type": "string" },
+        "watergang_id":{ "type": "string", "ref": "Watergang" },
+        "capaciteit_m3_h": { "type": "int", "min": 50, "max": 50000 },
+        "is_in_bedrijf": { "type": "bool" }
+      }
+    },
+    "Lozingspunt": {
+      "primary_key": "lozing_id",
+      "attributes": {
+        "lozing_id":    { "type": "string", "format": "uuid" },
+        "watergang_id": { "type": "string", "ref": "Watergang" },
+        "type":         { "type": "enum", "values": ["overstort","RWZI","industrie","hemelwater"] }
+      }
+    },
+    "Waterpeilmeting": {
+      "primary_key": ["watergang_id","meet_tijdstip"],
+      "attributes": {
+        "watergang_id":  { "type": "string", "ref": "Watergang" },
+        "meet_tijdstip": { "type": "timestamp" },
+        "peil_nap_m":    { "type": "decimal", "min": -3.5, "max": 1.0 },
+        "debiet_m3_s":   { "type": "decimal", "min": 0, "max": 50 }
+      }
+    },
+    "Waterkwaliteitsmeting": {
+      "$comment": "Bereiken gebaseerd op NEN-richtlijnen voor stedelijk oppervlaktewater.",
+      "primary_key": ["watergang_id","meet_tijdstip","parameter"],
+      "attributes": {
+        "watergang_id":  { "type": "string", "ref": "Watergang" },
+        "meet_tijdstip": { "type": "timestamp" },
+        "parameter":     { "type": "enum", "values": ["pH","O2_mg_l","NO3_mg_l","PO4_mg_l","Cl_mg_l","temperatuur_c","troebelheid_NTU"] },
+        "waarde":        { "type": "decimal" },
+        "eenheid":       { "type": "string" },
+        "norm_status":   { "type": "enum", "values": ["binnen_norm","overschrijding","onbekend"] }
+      }
+    }
+  }
+}
