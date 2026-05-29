@@ -277,7 +277,7 @@ fabric-iq/
 
 ## 🔧 Troubleshooting
 
-| Problem | Solution |
+| Common Problems | Solutions |
 |---|---|
 | `python` not found | Make sure Python 3.10+ is installed and added to PATH |
 | `pip install` fails | Run PowerShell as Administrator, or use `python -m pip install -r requirements.txt` |
