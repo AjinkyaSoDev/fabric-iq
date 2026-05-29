@@ -93,6 +93,11 @@ cd fabric-iq
 
 #### Step 2: Run the full demo locally
 
+> ⚠️ **Windows users:** if you see a script execution error, run this first:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+
 ```powershell
 .\run-demo.ps1
 ```
@@ -122,6 +127,8 @@ Done. Gold layer at: C:\...\fabric-iq\lakehouse\gold
 
 ### PART 2 — Deploy to Microsoft Fabric (30 min)
 
+> 💡 The notebooks are fully self-contained. They clone the repo and generate data directly inside Fabric — **no manual file upload required**.
+
 #### Step 3: Create a Fabric Lakehouse
 
 1. Go to [app.fabric.microsoft.com](https://app.fabric.microsoft.com)
@@ -131,14 +138,7 @@ Done. Gold layer at: C:\...\fabric-iq\lakehouse\gold
 5. Note your **Workspace ID** from the browser URL:
    `https://app.fabric.microsoft.com/groups/`**`<your-workspace-id>`**`/...`
 
-#### Step 4: Upload bronze data to OneLake
-
-1. In the `FabricIQ` lakehouse, click **Files** in the Explorer pane (left side)
-2. Click **Upload → Upload folder**
-3. Browse to and select `lakehouse/bronze/` from your local clone
-4. Wait for upload to complete — you should see folders like `Wegvak/`, `Verkeersmeting/`, etc. under `Files/bronze/`
-
-#### Step 5: Import the 4 notebooks
+#### Step 4: Import the 4 notebooks
 
 1. In your workspace → **New → Import notebook**
 2. Import each notebook **one at a time** (in order):
@@ -153,7 +153,7 @@ Done. Gold layer at: C:\...\fabric-iq\lakehouse\gold
 4. Note each notebook's **ID** from its URL:
    `https://app.fabric.microsoft.com/groups/<workspace-id>/notebooks/`**`<notebook-id>`**
 
-#### Step 6: Fill in the pipeline placeholders
+#### Step 5: Fill in the pipeline placeholders
 
 Open `pipelines/fabric_pipeline.json` in any text editor (VS Code recommended) and replace all placeholders:
 
@@ -168,7 +168,7 @@ Open `pipelines/fabric_pipeline.json` in any text editor (VS Code recommended) a
 
 Save the file after editing.
 
-#### Step 7: Import the pipeline
+#### Step 6: Import the pipeline
 
 1. In your workspace → **New → Data pipeline**
 2. In the pipeline editor, click the **{ }** (JSON view) button in the toolbar
@@ -176,16 +176,16 @@ Save the file after editing.
 4. Name the pipeline: **`GGM_Synthetic_TrafficWater`**
 5. Click **Save**
 
-#### Step 8: Create the Direct Lake semantic model
+#### Step 7: Create the Direct Lake semantic model
 
-1. In the `FabricIQ` lakehouse, run notebook `03_gold_marts` once manually (click ▶ **Run all**) to create the Gold Delta tables under **Tables/**
+1. Run notebook `03_gold_marts` once manually (click ▶ **Run all**) — gold Delta tables will appear under **Tables/** in the `FabricIQ` lakehouse
 2. Once gold tables are visible, click **New semantic model** (top right of the Lakehouse)
 3. Select all gold tables: `dim_locatie`, `dim_tijd`, `fact_verkeer`, `fact_waterpeil`, `fact_waterkwaliteit`, `fact_cross_domain_alert`
 4. Click **Confirm**
 5. Name it: **`FabricIQ_Model`**
 6. Note the **semantic model ID** from its URL and update `{{semantic_model_id}}` in your pipeline JSON, then re-import or update the pipeline
 
-#### Step 9: Run the full pipeline
+#### Step 8: Run the full pipeline
 
 1. Open the `GGM_Synthetic_TrafficWater` pipeline
 2. Click **▶ Run**
@@ -201,7 +201,7 @@ Each activity shows green ✅ on success. Total runtime: ~5–10 minutes.
 
 ### PART 3 — Power BI Report (10 min)
 
-#### Step 10: Open in Power BI Desktop
+#### Step 9: Open in Power BI Desktop
 
 1. Open **Power BI Desktop**
 2. **File → Open report → Browse**
@@ -209,7 +209,7 @@ Each activity shows green ✅ on success. Total runtime: ~5–10 minutes.
 4. When prompted, connect to your `FabricIQ_Model` semantic model in Fabric
 5. The report uses **Direct Lake** — no data import, reads directly from OneLake Delta tables
 
-#### Step 11: Publish to Fabric
+#### Step 10: Publish to Fabric
 
 1. In Power BI Desktop → **Home → Publish**
 2. Select your Fabric workspace

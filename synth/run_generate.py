@@ -6,7 +6,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     start = (
         datetime.fromisoformat(args.start)
         if args.start
-        else datetime.utcnow().replace(minute=0, second=0, microsecond=0) - timedelta(days=args.days)
+        else datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0) - timedelta(days=args.days)
     )
 
     out_root = Path(args.out)
