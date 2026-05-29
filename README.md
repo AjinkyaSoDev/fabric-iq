@@ -113,11 +113,15 @@ This single script will:
 Expected output:
 ```
 [1/3] Generating bronze synthetic data (14 days)...
-  wrote Wegvak:          150 rows -> lakehouse/bronze
-  wrote Verkeersmeting: 50400 rows -> lakehouse/bronze
+  wrote Wegvak:        200 rows -> bronze\Wegvak
+  wrote Verkeersmeting: 13440 rows -> bronze\Verkeersmeting
   ...
 [2/3] Building silver + gold layers...
+  gold/dim_locatie       208 rows
+  gold/fact_verkeer    13440 rows
+  ...
 [3/3] Running quality tests...
+============== 4 passed in 1.3s ==============
 Done. Gold layer at: C:\...\fabric-iq\lakehouse\gold
 ```
 
@@ -153,72 +157,83 @@ Done. Gold layer at: C:\...\fabric-iq\lakehouse\gold
 4. Note each notebook's **ID** from its URL:
    `https://app.fabric.microsoft.com/groups/<workspace-id>/notebooks/`**`<notebook-id>`**
 
-#### Step 5: Fill in the pipeline placeholders
+#### Step 5: Generate gold tables and create the semantic model
 
-Open `pipelines/fabric_pipeline.json` in any text editor (VS Code recommended) and replace all placeholders:
+1. Open notebook `01_bronze_ingest` and click ▶ **Run all** (waits ~3 min)
+2. Open notebook `02_silver_curate` and click ▶ **Run all** (~1 min)
+3. Open notebook `03_gold_marts` and click ▶ **Run all** (~1 min)
+4. Open notebook `04_quality_checks` and click ▶ **Run all** (~30 sec)
+5. In the `FabricIQ` lakehouse, you should see all `bronze_*`, `silver_*`, and `gold_*` tables under **Tables/**
+6. Click **New semantic model** (top right of the Lakehouse)
+7. Select all gold tables: `gold_dim_locatie`, `gold_dim_tijd`, `gold_fact_verkeer`, `gold_fact_waterpeil`, `gold_fact_waterkwaliteit`, `gold_fact_cross_domain_alert`
+8. Name it: **`FabricIQ_Model`** → **Confirm**
+9. Note the **semantic model ID** from its URL
+
+#### Step 6: (Optional) Create an orchestration pipeline
+
+> ⚠️ **Heads-up:** Fabric's pipeline UI does not have a reliable JSON-paste import. The easiest path is to **build the pipeline visually** rather than import the JSON file. The JSON file is provided as a reference for what activities to chain.
+
+**Option A — Build visually (recommended):**
+
+1. In your workspace → **New → Data pipeline** → name it `GGM_Synthetic_TrafficWater`
+2. Add 4 **Notebook** activities (one per notebook), chained with **On success** dependencies:
+   ```
+   Bronze_Ingest ──► Silver_Curate ──► Gold_Marts ──► Quality_Checks
+   ```
+3. For each Notebook activity, point it at the corresponding notebook in your workspace
+4. Add a **Semantic model refresh** activity at the end, pointing at `FabricIQ_Model`
+5. Click **Save**
+
+**Option B — Use the JSON file via Fabric REST API:**
+
+Open `pipelines/fabric_pipeline.json`, replace the placeholders below, then POST it to the Fabric Items API:
 
 | Placeholder | Replace with |
 |---|---|
 | `{{workspace_id}}` | Your workspace ID (Step 3) |
-| `{{notebook_id_01}}` | ID of `01_bronze_ingest` notebook |
-| `{{notebook_id_02}}` | ID of `02_silver_curate` notebook |
-| `{{notebook_id_03}}` | ID of `03_gold_marts` notebook |
-| `{{notebook_id_04}}` | ID of `04_quality_checks` notebook |
-| `{{semantic_model_id}}` | Fill in after Step 8 |
+| `{{notebook_id_01}}` | ID of `01_bronze_ingest` (from notebook URL) |
+| `{{notebook_id_02}}` | ID of `02_silver_curate` |
+| `{{notebook_id_03}}` | ID of `03_gold_marts` |
+| `{{notebook_id_04}}` | ID of `04_quality_checks` |
+| `{{semantic_model_id}}` | ID of `FabricIQ_Model` (Step 5) |
 
-Save the file after editing.
+Reference: [Fabric REST API – Create item](https://learn.microsoft.com/rest/api/fabric/core/items/create-item).
 
-#### Step 6: Import the pipeline
-
-1. In your workspace → **New → Data pipeline**
-2. In the pipeline editor, click the **{ }** (JSON view) button in the toolbar
-3. Replace the entire content with your updated `fabric_pipeline.json`
-4. Name the pipeline: **`GGM_Synthetic_TrafficWater`**
-5. Click **Save**
-
-#### Step 7: Create the Direct Lake semantic model
-
-1. Run notebook `03_gold_marts` once manually (click ▶ **Run all**) — gold Delta tables will appear under **Tables/** in the `FabricIQ` lakehouse
-2. Once gold tables are visible, click **New semantic model** (top right of the Lakehouse)
-3. Select all gold tables: `dim_locatie`, `dim_tijd`, `fact_verkeer`, `fact_waterpeil`, `fact_waterkwaliteit`, `fact_cross_domain_alert`
-4. Click **Confirm**
-5. Name it: **`FabricIQ_Model`**
-6. Note the **semantic model ID** from its URL and update `{{semantic_model_id}}` in your pipeline JSON, then re-import or update the pipeline
-
-#### Step 8: Run the full pipeline
+#### Step 7: Run the pipeline (if you created one)
 
 1. Open the `GGM_Synthetic_TrafficWater` pipeline
 2. Click **▶ Run**
-3. Watch all 5 activities execute in sequence:
+3. Watch all activities execute in sequence. Total runtime: ~5–10 minutes.
 
-```
-Bronze_Ingest ──► Silver_Curate ──► Gold_Marts ──► Quality_Checks ──► Refresh_Semantic_Model
-```
-
-Each activity shows green ✅ on success. Total runtime: ~5–10 minutes.
+> 💡 You can also skip the pipeline entirely and just re-run the notebooks manually for demos.
 
 ---
 
-### PART 3 — Power BI Report (10 min)
+### PART 3 — Power BI Report (15 min)
 
-#### Step 9: Open in Power BI Desktop
+> 💡 The `powerbi/TrafficWater.pbip` file is a **starter template / stub** — not a finished report. You'll build the visuals on top of the `FabricIQ_Model` semantic model.
 
-1. Open **Power BI Desktop**
-2. **File → Open report → Browse**
-3. Select `powerbi/TrafficWater.pbip`
-4. When prompted, connect to your `FabricIQ_Model` semantic model in Fabric
-5. The report uses **Direct Lake** — no data import, reads directly from OneLake Delta tables
+#### Step 8: Build the report in Fabric (easiest path)
 
-#### Step 10: Publish to Fabric
+1. In Fabric, navigate to your `FabricIQ_Model` semantic model
+2. Click **Create report → Start from scratch** (or **Auto-create**)
+3. Drag fields from the gold tables onto the canvas to build visuals
+4. Save the report in your workspace
 
-1. In Power BI Desktop → **Home → Publish**
-2. Select your Fabric workspace
-3. Open the published report in Fabric
+#### Step 9: (Alternative) Build in Power BI Desktop
 
-**Recommended report pages to build:**
+1. Open **Power BI Desktop** (2024+ with PBIP preview enabled)
+2. **Get data → Power BI semantic models → `FabricIQ_Model`** (Direct Lake mode)
+3. Build the visuals you want
+4. **File → Save as → Power BI Project (.pbip)** to optionally replace `powerbi/TrafficWater.pbip`
+5. **Home → Publish** → select your Fabric workspace
+
+**Recommended report pages:**
 - 🚦 **Verkeer overzicht** — Map of road segments colored by avg. speed, hourly vehicle count chart
 - 💧 **Water overzicht** — Water level trends, KPI cards for % norm breaches, pH/O2/NO3/PO4 breakdown
 - ⚠️ **Cross-domain alerts** — Heatmap of hours × districts where traffic peaks and water quality breaches coincide
+
+See [`powerbi/README.md`](powerbi/README.md) for detailed page-by-page guidance.
 
 ---
 
@@ -266,10 +281,13 @@ fabric-iq/
 |---|---|
 | `python` not found | Make sure Python 3.10+ is installed and added to PATH |
 | `pip install` fails | Run PowerShell as Administrator, or use `python -m pip install -r requirements.txt` |
+| `run-demo.ps1` blocked | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first |
 | Notebook can't find lakehouse | Re-add the `FabricIQ` lakehouse via **Add lakehouse** in the notebook |
-| Pipeline placeholder error | Double-check all `{{...}}` values are replaced with real GUIDs in the JSON |
-| Gold tables not appearing | Run notebook `03_gold_marts` manually first before creating the semantic model |
-| Direct Lake connection fails | Ensure the semantic model points at `FabricIQ` lakehouse Tables, not Files |
+| Notebook 01 git clone fails | The notebook clones from `https://github.com/AjinkyaSoDev/fabric-iq.git`. If you forked the repo, edit the `git clone` URL in cell 2 of `01_bronze_ingest.ipynb` to point at your fork |
+| `spark` not defined in notebook | Make sure the notebook is running in a **Synapse PySpark** kernel (default in Fabric notebooks) |
+| Gold tables not appearing | Run notebooks 01, 02, 03 in order; check the Tables/ folder in the Lakehouse |
+| Direct Lake connection fails | Ensure the semantic model points at the `FabricIQ` lakehouse **Tables** (not Files) |
+| Pipeline JSON import doesn't work | Use Option A in Step 6 — build the pipeline visually instead |
 
 ---
 
