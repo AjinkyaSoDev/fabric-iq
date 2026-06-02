@@ -1,5 +1,22 @@
 # Fabric IQ — Known Issues & Fixes
 
+## 0. `PowerBIFeatureDisabled` — Cannot create Ontology
+
+**Error:**
+```
+An unexpected error occurred while attempting to create the Ontology (preview).
+Error code: PowerBIFeatureDisabled
+```
+
+**Causes (check in order):**
+1. **Tenant setting is off** — Admin Portal → Tenant settings → search "Ontology" → toggle On. Changes take up to 15 min.
+2. **Insufficient SKU** — Ontology requires **F64 or higher** (or P2+). F2/F4/F8/F16/F32 do **not** support it.
+3. **Capacity-level delegation blocked** — Admin Portal → Capacity settings → your capacity → Delegated tenant settings → check preview features aren't blocked.
+
+**Full step-by-step:** See [ontology-guide.md](../../../../docs/ontology-guide.md)
+
+---
+
 ## 1. `%pip` magic disabled in Fabric pipelines
 
 **Error:**

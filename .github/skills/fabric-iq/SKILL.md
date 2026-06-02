@@ -1,6 +1,6 @@
 ---
 name: fabric-iq
-description: 'Fabric IQ synthetic data demo for Dutch municipal (GGM) traffic and water management on Microsoft Fabric. Use when: setting up Fabric IQ, running the demo, fixing pipeline errors, deploying notebooks, troubleshooting bronze/silver/gold medallion layers, fixing %pip magic errors, debugging Data Factory pipelines, understanding the GGM schema, generating synthetic traffic or water data, configuring lakehouse, Power BI Direct Lake, or quality checks.'
+description: 'Fabric IQ synthetic data demo for Dutch municipal (GGM) traffic and water management on Microsoft Fabric. Use when: setting up Fabric IQ, running the demo, fixing pipeline errors, deploying notebooks, troubleshooting bronze/silver/gold medallion layers, fixing %pip magic errors, debugging Data Factory pipelines, understanding the GGM schema, generating synthetic traffic or water data, configuring lakehouse, Power BI Direct Lake, quality checks, creating ontology, Fabric ontology setup, ontology from semantic model, PowerBIFeatureDisabled, AI Skill on ontology, natural language Q&A on data, GGM concept mapping.'
 argument-hint: 'Optional: describe what you want to do (e.g. "fix pipeline error", "explain gold layer")'
 ---
 
@@ -30,6 +30,18 @@ fabric-iq/
 ```
 
 ## Common Tasks
+
+### Create an Ontology from the semantic model
+Fabric Ontology (preview) requires F64+ capacity and the tenant setting enabled.
+Full step-by-step (concept mapping, relationships, synonyms, AI Skill setup): [ontology-guide](../../../../docs/ontology-guide.md)
+
+Quick path:
+1. Admin Portal → Tenant settings → enable **Ontology**
+2. Workspace → **New → Ontology** → name `FabricIQ_Ontology`
+3. Connect to `FabricIQ_Model` semantic model
+4. Map each gold table to a concept (see guide Part 3)
+5. Add GGM synonyms (Dutch + English) for Copilot discovery
+6. Publish → test with Fabric Copilot or create an **AI Skill**
 
 ### Run the full local demo
 ```powershell
@@ -96,5 +108,6 @@ Faker (nl_NL) → synth/generators → Bronze Delta → Silver Delta → Gold St
 - Microsoft Fabric: Data Engineering (Spark), Data Factory, Power BI
 
 ## More References
+- [**Ontology Guide**](../../../../docs/ontology-guide.md) — Full step-by-step: create Fabric Ontology from FabricIQ_Model
 - [Known Issues & Fixes](./references/known-issues.md)
 - [GGM Schema](./references/ggm-schema.md)

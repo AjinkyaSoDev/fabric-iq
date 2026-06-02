@@ -237,7 +237,19 @@ See [`powerbi/README.md`](powerbi/README.md) for detailed page-by-page guidance.
 
 ---
 
-## 🗂️ Repository Layout
+### PART 4 — Fabric Ontology & AI Skill (optional, F64+)
+
+> 💡 **What this unlocks:** Natural-language Q&A on your GGM data using Fabric Copilot — e.g. *"Welke locaties hebben normoverschrijdingen deze week?"*
+
+See the **[full step-by-step ontology guide](docs/ontology-guide.md)** for:
+- Enabling the Ontology tenant setting (Admin Portal)
+- Creating `FabricIQ_Ontology` from the `FabricIQ_Model` semantic model
+- Mapping each gold table to a GGM concept with Dutch synonyms
+- Publishing and testing with Fabric Copilot / AI Skills
+
+> ⚠️ Requires **F64 or higher** capacity. If you see `PowerBIFeatureDisabled`, see [known issues](docs/ontology-guide.md#prerequisites).
+
+---
 
 ```
 fabric-iq/
@@ -267,6 +279,8 @@ fabric-iq/
 ├── powerbi/
 │   ├── TrafficWater.pbip        # Power BI Desktop project file
 │   └── README.md                # Report page guidance
+├── docs/
+│   └── ontology-guide.md        # Step-by-step: create Fabric Ontology from FabricIQ_Model
 ├── tests/
 │   └── test_generators.py       # pytest smoke tests for synthetic generators
 ├── requirements.txt             # Python dependencies
