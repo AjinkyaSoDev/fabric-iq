@@ -16,14 +16,152 @@ Think of it as the semantic model telling Power BI *how to query* the data, whil
 
 ## Prerequisites
 
-| Requirement | Detail |
-|---|---|
-| Fabric capacity | **F64+** (or P2+ Premium) — Ontology is not available on F2/F4/F8/F16/F32 |
-| Tenant setting | Admin Portal → Tenant settings → search **"Ontology"** → toggle **On** |
-| Semantic model | `FabricIQ_Model` published to Fabric (see [README Step 5](../README.md)) |
-| Role | Workspace **Contributor** or higher |
+Work through all four levels before you try to create an ontology. Each level builds on the one before it.
 
-> ⚠️ If you see error `PowerBIFeatureDisabled`, the tenant setting is off. Ask your Fabric admin to enable it. Changes take up to 15 minutes to propagate.
+### Level 0 — Accounts & Licences (start here if you're brand new to Fabric)
+
+If you have never used Microsoft Fabric before, complete these steps first:
+
+1. **Get a Microsoft account** (work/school M365 account, or a personal Microsoft account)
+   - If your organisation uses Microsoft 365 you already have one — use your work email.
+   - No M365? Sign up at [account.microsoft.com](https://account.microsoft.com).
+
+2. **Start a Microsoft Fabric trial**
+   - Go to [app.fabric.microsoft.com](https://app.fabric.microsoft.com) and sign in.
+   - If you don't have a Fabric licence you'll be prompted to **Start free trial** (60 days, no credit card needed).
+   - Accept the trial and wait ~1 minute for provisioning.
+
+3. **Verify your Fabric licence**
+   - In Fabric, click your profile photo (top right) → **Account manager**
+   - You should see **Microsoft Fabric (Free)** or a trial / paid licence.
+   - A free/trial licence is enough for most Fabric features, **but not for Ontology** — see Level 1.
+
+   > 💡 If you're at a company, ask your IT/Microsoft admin whether you already have a Fabric licence through your Microsoft 365 subscription (E3/E5 or F3 often include it).
+
+---
+
+### Level 1 — Fabric Capacity (required for Ontology)
+
+Fabric Ontology is a **premium preview feature** that only runs on specific capacity sizes.
+
+#### What is a Fabric capacity?
+A capacity is a reserved pool of compute resources (CPU, RAM) in Microsoft Azure that powers your Fabric workspace. Capacities are sized with an **F-SKU** (e.g. F2, F4, F64) — bigger = more power = higher cost.
+
+#### Minimum SKU for Ontology
+
+| SKU | Ontology supported? | Notes |
+|---|---|---|
+| F2 / F4 / F8 / F16 / F32 | ❌ No | Too small — Ontology feature is disabled |
+| **F64** | ✅ Yes | Minimum required |
+| F128, F256, F512, F1024, F2048 | ✅ Yes | Larger, more expensive |
+| P2 / P3 / P4 / P5 (Premium) | ✅ Yes | Legacy Premium SKUs also qualify |
+
+> ⚠️ **Trial capacities** are typically F64 equivalent — Ontology *may* be available on a Fabric trial. Check by attempting to create an ontology after enabling the tenant setting.
+
+#### How to check your current capacity SKU
+
+1. Go to [app.fabric.microsoft.com](https://app.fabric.microsoft.com) → ⚙️ **Admin portal**
+2. Click **Capacity settings** in the left menu
+3. Find your capacity in the list — the **SKU** column shows e.g. `F64`
+4. If you don't see a capacity, or it's F2–F32, you'll need to upgrade or create a new one
+
+#### How to get an F64 capacity (if you don't have one)
+
+**Option A — Upgrade existing capacity (if you're the capacity admin):**
+1. Admin portal → **Capacity settings** → click your capacity name
+2. Click **Change size** → select **F64** or higher
+3. Confirm — billing changes immediately (pay-as-you-go via Azure subscription)
+
+**Option B — Create a new F64 capacity:**
+1. You need an **Azure subscription** ([free tier available](https://azure.microsoft.com/free/) with $200 credit)
+2. Go to [portal.azure.com](https://portal.azure.com) → **Create a resource** → search **Microsoft Fabric**
+3. Select **Microsoft Fabric** → **Create**
+4. Fill in: subscription, resource group, region, capacity name, size = **F64**, admin = your account
+5. Click **Review + Create** → **Create** (takes ~2 minutes)
+6. Back in Fabric Admin portal → **Capacity settings** → associate your workspace with the new capacity
+
+**Option C — Ask your organisation's Azure/Fabric admin** to assign your workspace to an existing F64+ capacity.
+
+---
+
+### Level 2 — Fabric Workspace & Roles
+
+You need the right workspace and permissions before you can manage tenant settings or create items.
+
+#### Check your workspace role
+
+1. In Fabric, open your workspace (left navigation → your workspace name)
+2. Click **Manage access** (top right of the workspace)
+3. Find your name — you need **Admin**, **Member**, or **Contributor** role
+   - **Viewer** → cannot create items → ask workspace Admin to upgrade your role
+   - **Contributor or higher** → you're good ✅
+
+#### Workspace capacity assignment
+
+Your workspace must be assigned to the F64+ capacity:
+
+1. In your workspace → **Workspace settings** (⚙️ icon)
+2. Go to the **Premium** tab (or **Licence info** tab)
+3. Under **Licence mode**, confirm it shows **Fabric capacity** and the capacity name
+4. If it shows **Pro** or **Premium per user**, click **Edit** → select your F64 capacity → **Save**
+
+---
+
+### Level 3 — FabricIQ Data Pipeline (Ontology sits on top of this)
+
+The ontology connects to the `FabricIQ_Model` semantic model, which in turn reads the Gold Delta tables. All of this must exist before you create an ontology.
+
+**Complete checklist (in order):**
+
+- [ ] Fabric Lakehouse **`FabricIQ`** created in your workspace
+- [ ] All 4 notebooks imported and the `FabricIQ` lakehouse attached to each
+- [ ] Notebooks run in order (01 → 02 → 03 → 04) — gold tables visible under **Tables/** in the lakehouse
+- [ ] Semantic model **`FabricIQ_Model`** created from the gold tables (Lakehouse → **New semantic model**)
+- [ ] `FabricIQ_Model` shows all 6 gold tables: `dim_locatie`, `dim_tijd`, `fact_verkeer`, `fact_waterpeil`, `fact_waterkwaliteit`, `fact_cross_domain_alert`
+
+> 📖 If any of the above are missing, follow [README — Parts 1 & 2](../README.md) first, then return here.
+
+---
+
+### Level 4 — Admin Portal Access (to enable the tenant setting)
+
+Enabling the Ontology tenant setting requires **Fabric Administrator** privileges. This is separate from workspace roles.
+
+#### Do you have Fabric Admin access?
+
+1. Go to [app.fabric.microsoft.com](https://app.fabric.microsoft.com) → ⚙️ **Settings** (top right)
+2. If you see **Admin portal** in the menu → you have admin access ✅
+3. If you don't see it → you are not a Fabric Admin
+
+#### If you are NOT a Fabric Admin
+
+Ask your organisation's Fabric/Power BI administrator to:
+1. Go to Admin portal → **Tenant settings** → search **Ontology**
+2. Enable **"Users can create and use ontologies (preview)"**
+3. Apply to **Entire organisation** or add you to a specific security group
+
+You can send them this request template:
+
+> *"Hi, I'm working on the Fabric IQ project and would like to use the Fabric Ontology preview feature. Could you please enable the 'Users can create and use ontologies' setting in the Fabric Admin Portal → Tenant settings? I also need my workspace to be on an F64+ capacity. Thank you."*
+
+#### If you ARE a Fabric Admin
+
+Proceed to Part 1 below.
+
+---
+
+### Prerequisites Summary Checklist
+
+Before proceeding, confirm all boxes are checked:
+
+- [ ] Microsoft account and Fabric licence (trial or paid)
+- [ ] Workspace assigned to **F64 or higher** Fabric capacity
+- [ ] Workspace role: **Contributor, Member, or Admin**
+- [ ] Gold tables exist in the `FabricIQ` lakehouse (`dim_*`, `fact_*`)
+- [ ] `FabricIQ_Model` semantic model published in the workspace
+- [ ] Fabric Admin access (or admin contacted to enable setting)
+
+> ✅ All checked? Continue to Part 1.
 
 ---
 
