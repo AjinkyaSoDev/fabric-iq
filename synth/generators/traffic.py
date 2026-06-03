@@ -8,15 +8,17 @@ from typing import Iterable
 import pandas as pd
 
 from synth.common import (
+    DELFT_OV_HALTES,
+    DELFT_PARKEERGARAGES,
     DiurnalProfile,
+    RVV_DESCRIPTIONS,
     hourly_range,
-    kenteken,
     new_id,
-    random_wijk,
+    random_straat,
     rd_point,
 )
 
-RVV_CODES = ["A01", "A02", "B06", "C01", "C02", "E06", "G11", "J16", "L02"]
+RVV_CODES = list(RVV_DESCRIPTIONS.keys())
 WEGTYPES = ["autoweg", "gebiedsontsluitingsweg", "erftoegangsweg", "fietspad", "voetpad"]
 WEGTYPE_SPEED = {
     "autoweg": 100, "gebiedsontsluitingsweg": 50,
@@ -27,12 +29,11 @@ WEGTYPE_SPEED = {
 def gen_wegvakken(n: int = 200) -> pd.DataFrame:
     rows = []
     for _ in range(n):
-        wegtype = random.choices(WEGTYPES, weights=[0.05, 0.25, 0.45, 0.15, 0.10])[0]
+        straatnaam, wijk_code, wegtype = random_straat()
         x, y = rd_point()
-        wijk_code, _ = random_wijk()
         rows.append({
             "wegvak_id": new_id(),
-            "straatnaam": f"{random.choice(['Laan','Straat','Weg','Plein','Singel'])} {random.choice(['van','der','ten'])} {random.choice(['Delft','Hof','Oost','West','Nieuwe','Oude'])}",
+            "straatnaam": straatnaam,
             "wegtype": wegtype,
             "lengte_m": round(random.uniform(15, 850), 1),
             "max_snelheid": WEGTYPE_SPEED[wegtype],
@@ -47,11 +48,12 @@ def gen_wegvakken(n: int = 200) -> pd.DataFrame:
 def gen_verkeersborden(wegvakken: pd.DataFrame, n: int = 400) -> pd.DataFrame:
     rows = []
     for _ in range(n):
+        rvv_code = random.choice(RVV_CODES)
         rows.append({
             "bord_id": new_id(),
             "wegvak_id": wegvakken["wegvak_id"].sample(1).iloc[0],
-            "rvv_code": random.choice(RVV_CODES),
-            "omschrijving": "RVV bord",
+            "rvv_code": rvv_code,
+            "omschrijving": RVV_DESCRIPTIONS[rvv_code],
             "installatie_datum": datetime(random.randint(2005, 2024), random.randint(1, 12), random.randint(1, 28)).date(),
         })
     return pd.DataFrame(rows)
@@ -78,16 +80,24 @@ def gen_parkeerplaatsen(wegvakken: pd.DataFrame, n: int = 120) -> pd.DataFrame:
             ["straatparkeren", "parkeergarage", "P+R", "vergunninghouders"],
             weights=[0.6, 0.15, 0.05, 0.20],
         )[0]
+        wegvak = wegvakken.sample(1).iloc[0]
+        if soort == "parkeergarage":
+            naam, capaciteit, tarief = random.choice(DELFT_PARKEERGARAGES)
+        elif soort == "P+R":
+            naam, capaciteit, tarief = "P+R Delft (Station)", random.randint(150, 300), 0.0
+        else:
+            label = {"straatparkeren": "Straatparkeren", "vergunninghouders": "Vergunninghouders"}[soort]
+            naam = f"{label} {wegvak['straatnaam']}"
+            capaciteit = random.randint(1, 30)
+            tarief = round(random.choice([0.0, 1.5, 2.5, 3.0, 4.5]), 2)
         rows.append({
             "parkeer_id": new_id(),
-            "wegvak_id": wegvakken["wegvak_id"].sample(1).iloc[0],
-            "capaciteit": (
-                random.randint(50, 500) if soort == "parkeergarage"
-                else random.randint(1, 30)
-            ),
+            "naam": naam,
+            "wegvak_id": wegvak["wegvak_id"],
+            "capaciteit": capaciteit,
             "soort": soort,
             "is_elektrisch": random.random() < 0.25,
-            "tarief_per_uur": round(random.choice([0.0, 1.5, 2.5, 3.0, 4.5, 6.0]), 2),
+            "tarief_per_uur": tarief,
         })
     return pd.DataFrame(rows)
 
@@ -95,10 +105,12 @@ def gen_parkeerplaatsen(wegvakken: pd.DataFrame, n: int = 120) -> pd.DataFrame:
 def gen_ovhaltes(wegvakken: pd.DataFrame, n: int = 45) -> pd.DataFrame:
     rows = []
     for _ in range(n):
+        naam, modaliteit, lijn = random.choice(DELFT_OV_HALTES)
         rows.append({
             "halte_id": new_id(),
-            "naam": f"Halte {random.choice(['Centrum','TU','Buitenhof','Tanthof','Ziekenhuis','Voorhof'])} {random.randint(1,30)}",
-            "modaliteit": random.choices(["bus", "tram", "trein"], weights=[0.7, 0.25, 0.05])[0],
+            "naam": naam,
+            "modaliteit": modaliteit,
+            "lijn": lijn,
             "wegvak_id": wegvakken["wegvak_id"].sample(1).iloc[0],
         })
     return pd.DataFrame(rows)

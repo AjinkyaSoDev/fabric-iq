@@ -52,8 +52,8 @@ and demonstrated to stakeholders in under an hour.
 | `dim_locatie` | ~210 | Unified dimension: road segments + waterways |
 | `dim_tijd` | ~340 | Hourly time dimension |
 | `fact_verkeer` | ~13k | Hourly vehicle counts per `wegvak` |
-| `fact_waterpeil` | ~2.7k | Hourly water level (m NAP) per `watergang` |
-| `fact_waterkwaliteit` | ~3.8k | NEN-aligned water quality readings |
+| `fact_waterpeil` | ~4.7k | Hourly water level (m NAP) per `watergang` |
+| `fact_waterkwaliteit` | ~5.5k | NEN-aligned water quality readings |
 | `fact_cross_domain_alert` | varies | Hours where traffic peaks + water norm breaches coincide |
 
 ---

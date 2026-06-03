@@ -7,11 +7,11 @@ from datetime import datetime
 import pandas as pd
 
 from synth.common import (
-    DELFT_WATERGANGEN,
+    DELFT_GEMALEN,
+    WATERGANG_CATALOG,
     WATER_QUALITY_RANGES,
     hourly_range,
     new_id,
-    random_wijk,
     sample_water_quality,
     seasonal_water_level,
 )
@@ -22,16 +22,22 @@ MATERIALEN = ["beton", "pvc", "gres", "gietijzer"]
 
 
 def gen_watergangen(n: int | None = None) -> pd.DataFrame:
-    names = DELFT_WATERGANGEN if n is None else random.choices(DELFT_WATERGANGEN, k=n)
+    catalog = WATERGANG_CATALOG if n is None else random.choices(WATERGANG_CATALOG, k=n)
     rows = []
-    for name in names:
-        wijk_code, _ = random_wijk()
+    for naam, categorie, wijk_code in catalog:
+        # Boezem (primair) waters are wider and longer than polder ditches.
+        if categorie == "primair":
+            lengte, breedte = random.uniform(1200, 4200), random.uniform(12, 30)
+        elif categorie == "secundair":
+            lengte, breedte = random.uniform(400, 1800), random.uniform(4, 12)
+        else:
+            lengte, breedte = random.uniform(120, 700), random.uniform(1.5, 5)
         rows.append({
             "watergang_id": new_id(),
-            "naam": name,
-            "categorie": random.choices(["primair", "secundair", "tertiair"], weights=[0.25, 0.45, 0.30])[0],
-            "lengte_m": round(random.uniform(120, 4200), 1),
-            "breedte_m": round(random.uniform(1.5, 30), 1),
+            "naam": naam,
+            "categorie": categorie,
+            "lengte_m": round(lengte, 1),
+            "breedte_m": round(breedte, 1),
             "wijk_code": wijk_code,
         })
     return pd.DataFrame(rows)
@@ -51,11 +57,12 @@ def gen_rioolstrengen(n: int = 250) -> pd.DataFrame:
 
 
 def gen_gemalen(watergangen: pd.DataFrame, n: int = 12) -> pd.DataFrame:
+    chosen = random.sample(DELFT_GEMALEN, min(n, len(DELFT_GEMALEN)))
     rows = []
-    for i in range(n):
+    for naam in chosen:
         rows.append({
             "gemaal_id": new_id(),
-            "naam": f"Gemaal {random.choice(['Noord','Zuid','Oost','West','Centrum'])} {i+1}",
+            "naam": naam,
             "watergang_id": watergangen["watergang_id"].sample(1).iloc[0],
             "capaciteit_m3_h": random.choice([200, 500, 1000, 2500, 5000, 10000, 25000]),
             "is_in_bedrijf": random.random() > 0.05,
@@ -64,13 +71,24 @@ def gen_gemalen(watergangen: pd.DataFrame, n: int = 12) -> pd.DataFrame:
 
 
 def gen_lozingspunten(watergangen: pd.DataFrame, n: int = 30) -> pd.DataFrame:
+    type_labels = {
+        "overstort": "Riooloverstort",
+        "RWZI": "RWZI-effluent",
+        "industrie": "Industriële lozing",
+        "hemelwater": "Hemelwateruitlaat",
+    }
     rows = []
     for _ in range(n):
+        watergang = watergangen.sample(1).iloc[0]
+        lozing_type = random.choices(
+            ["overstort", "RWZI", "industrie", "hemelwater"],
+            weights=[0.5, 0.05, 0.10, 0.35],
+        )[0]
         rows.append({
             "lozing_id": new_id(),
-            "watergang_id": watergangen["watergang_id"].sample(1).iloc[0],
-            "type": random.choices(["overstort", "RWZI", "industrie", "hemelwater"],
-                                   weights=[0.5, 0.05, 0.10, 0.35])[0],
+            "naam": f"{type_labels[lozing_type]} {watergang['naam']}",
+            "watergang_id": watergang["watergang_id"],
+            "type": lozing_type,
         })
     return pd.DataFrame(rows)
 
